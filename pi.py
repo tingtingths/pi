@@ -1,10 +1,12 @@
+#!/usr/bin/python3
 import time, sys, threading
 import multiprocessing as mp
 
-class Worker(mp.Process):
+class Worker(threading.Thread):
+#class Worker(mp.Process):
     def __init__(self, rank, step, thread_split, result):
-        #threading.Thread.__init__(self)
-        mp.Process.__init__(self)
+        threading.Thread.__init__(self)
+        #mp.Process.__init__(self)
         self.base_num = int(rank * thread_split)
         self.end_num = int(self.base_num + thread_split)
         self.step = step
@@ -22,7 +24,7 @@ if __name__ == "__main__":
             split = sys.maxsize
         else:
             split = int(sys.argv[1])
-    num_thread = int(sys.argv[2]) if sys.argv[2] else 1
+    num_thread = int(sys.argv[2]) if len(sys.argv) > 2 else 1
     step = 1.0 / split
     thread_split = split / num_thread
     _threads = []

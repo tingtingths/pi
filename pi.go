@@ -5,6 +5,7 @@ import "time"
 import "fmt"
 import "os"
 import "strconv"
+import "math"
 
 var notify = make(chan int)
 var result = make(chan float64)
@@ -49,5 +50,8 @@ func main() {
     pi *= step
     elapsed := time.Since(start_t)
 
-    fmt.Printf("pi: %f, time: %s\n", pi, elapsed)
+    fmt.Printf("pi: %g, time: %s\n", pi, elapsed)
+    var pi_diff float64
+    pi_diff = math.Pi - pi
+    fmt.Printf("diff: %g\n", pi_diff)
 }

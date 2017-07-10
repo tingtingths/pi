@@ -1,21 +1,13 @@
 #!/usr/bin/python3
-import time, sys, threading
 import multiprocessing as mp
+import time, sys
 
-class Worker(threading.Thread):
-#class Worker(mp.Process):
-    def __init__(self, rank, step, thread_split, result):
-        threading.Thread.__init__(self)
-        #mp.Process.__init__(self)
-        self.base_num = int(rank * thread_split)
-        self.end_num = int(self.base_num + thread_split)
-        self.step = step
-        self.result = result
-
-    def run(self):
-        for i in range(self.base_num, self.end_num):
-            x = (i + 0.5) * self.step
-            self.result.value = self.result.value + 4 / (1 + x * x)
+def calc(step, base, end):
+    ret = 0
+    for i in range(base, end):
+            x = (i + 0.5) * step
+            ret = ret + 4 / (1 + x * x)
+    q.put(ret)
 
 if __name__ == "__main__":
     if sys.argv[1]:
@@ -24,23 +16,30 @@ if __name__ == "__main__":
             split = sys.maxsize
         else:
             split = int(sys.argv[1])
-    num_thread = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+
+    num_thread = int(sys.argv[2]) if len(sys.argv) > 2 else mp.cpu_count()
     step = 1.0 / split
     thread_split = split / num_thread
     _threads = []
 
     print("split: {0}, step: {1}".format(split, step))
 
-    for i in range(0, num_thread):
-        _threads.append((Worker(i, step, thread_split, mp.Value("d", 0.0))))
+    q = mp.Queue()
 
     start = time.time()
-    [t.start() for t in _threads]
-    [t.join() for t in _threads]
+    for i in range(0, num_thread):
+        base = int(i * thread_split)
+        end = int(base + thread_split)
+        _threads.append(mp.Process(target=calc, args=(step, base, end,)))
+        _threads[i].start()
+        print(str(i) + " start")
+
+    for i in range(0, num_thread):
+        _threads[i].join()
     end = time.time()
 
     sum = 0
-    for t in _threads:
-        sum += t.result.value
+    for i in range(0, num_thread):
+        sum += q.get()
 
     print("pi: {0}, time: {1}".format(step*sum, end - start))
